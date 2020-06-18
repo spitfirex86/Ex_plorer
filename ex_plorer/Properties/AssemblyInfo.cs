@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("ex_plorer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Ex_plorer")]
+[assembly: AssemblyDescription("Win95-style file explorer")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("ex_plorer")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyProduct("Ex_plorer")]
+[assembly: AssemblyCopyright("Copyright © Spitfire_x86 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

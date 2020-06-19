@@ -37,7 +37,7 @@
             this.folderView.HideSelection = false;
             this.folderView.Location = new System.Drawing.Point(0, 0);
             this.folderView.Name = "folderView";
-            this.folderView.Size = new System.Drawing.Size(484, 361);
+            this.folderView.Size = new System.Drawing.Size(484, 321);
             this.folderView.TabIndex = 2;
             this.folderView.UseCompatibleStateImageBehavior = false;
             this.folderView.ItemActivate += new System.EventHandler(this.folderView_ItemActivate);
@@ -46,9 +46,8 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 361);
+            this.ClientSize = new System.Drawing.Size(484, 321);
             this.Controls.Add(this.folderView);
-            this.DoubleBuffered = true;
             this.Name = "ExplorerForm";
             this.Text = "Explorer";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.ExplorerForm_FormClosed);

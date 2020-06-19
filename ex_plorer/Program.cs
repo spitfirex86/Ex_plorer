@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
@@ -10,13 +11,15 @@ namespace ex_plorer
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-            //Application.EnableVisualStyles();
+            Application.EnableVisualStyles();
             Application.VisualStyleState = VisualStyleState.NoneEnabled;
             Application.SetCompatibleTextRenderingDefault(false);
 
-            ExplorerForm form = new ExplorerForm(@"C:\");
+            string path = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+
+            ExplorerForm form = new ExplorerForm(path);
             form.Show();
 
             Application.Run();

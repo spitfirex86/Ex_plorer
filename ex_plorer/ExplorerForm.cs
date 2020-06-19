@@ -1,7 +1,5 @@
 ﻿using ex_plorer.Properties;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,121 +9,174 @@ namespace ex_plorer
 {
     public partial class ExplorerForm : Form
     {
-        private string Path { get; }
-        private DirectoryInfo CurrentDir { get; }
+        private const bool StatusBarVisibleOnStart = true;
 
-        private ImageList icons;
+        private DirManager Manager { get; }
+
         private StatusBar statusBar;
-        private StatusBarPanel itemsCount = new StatusBarPanel();
+        private StatusBarPanel itemsCount;
+        private MenuItem[] viewModeItems;
 
         public ExplorerForm(string path)
         {
             InitializeComponent();
             SetUpMenus();
 
-            Path = path;
-            CurrentDir = new DirectoryInfo(path);
-
             Icon = Resources.dir;
             Text = path;
 
-            folderView.LargeImageList = icons = new ImageList
-            {
-                ImageSize = new Size(32, 32),
-                ColorDepth = ColorDepth.Depth32Bit,
-            };
-            icons.Images.Add("$dir", Resources.dir);
-            icons.Images.Add("$file", Resources.file);
+            Manager = new DirManager(path);
+            folderView.LargeImageList = Manager.LargeIcons;
+            folderView.SmallImageList = Manager.SmallIcons;
+
+            //TODO: Clipboard
+            //TODO: Drag and drop
         }
 
-        private void GetAllFiles()
+        private async void GetAllFiles()
         {
-            IEnumerable<ListViewItem> items = CurrentDir.EnumerateFileSystemInfos().Select(info =>
-            {
-                ListViewItem item = new ListViewItem(info.Name);
-                item.Tag = info;
-                bool isDirectory = false;
-
-                if (info is FileInfo file)
-                {
-                    item.ImageKey = SetIcon(file);
-                }
-                else if (info is DirectoryInfo dir)
-                {
-                    isDirectory = true;
-                    item.ImageKey = "$dir";
-                }
-
-                return new { isDirectory, item };
-            }).OrderByDescending(arg => arg.isDirectory).Select(arg => arg.item);
-
-            folderView.Items.AddRange(items.ToArray());
+            ListViewItem[] items = await Task.Run(Manager.GetAllFiles().ToArray);
+            folderView.Items.AddRange(items);
+            itemsCount.Text = $"{folderView.Items.Count} object(s)";
         }
 
-        private string SetIcon(FileInfo file)
+        private MenuItem[] GetDrivesMenu()
         {
-            string key;
-            if (file.Extension == "")
+            MenuItem[] items = new MenuItem[DirManager.Drives.Length];
+            for (int i = 0; i < DirManager.Drives.Length; i++)
             {
-                key = "$file";
-            }
-            else if (file.Extension == ".exe")
-            {
-                key = file.Name;
-                Icon fileIcon = Icon.ExtractAssociatedIcon(file.FullName) ?? SystemIcons.Application;
-                icons.Images.Add(file.Name, fileIcon);
-            }
-            else
-            {
-                key = file.Extension;
-
-                if (!icons.Images.ContainsKey(file.Extension))
+                DriveInfo drive = DirManager.Drives[i];
+                string label = drive.VolumeLabel;
+                if (string.IsNullOrEmpty(label))
                 {
-                    Icon fileIcon = Icon.ExtractAssociatedIcon(file.FullName) ?? SystemIcons.WinLogo;
-                    icons.Images.Add(file.Extension, fileIcon);
+                    switch (drive.DriveType)
+                    {
+                        case DriveType.Removable:
+                            label = "Removable Disk";
+                            break;
+                        case DriveType.Fixed:
+                            label = "Local Disk";
+                            break;
+                        case DriveType.Network:
+                            label = "Network Drive";
+                            break;
+                        case DriveType.CDRom:
+                            label = "CD-ROM Drive";
+                            break;
+                    }
                 }
-            }
+                MenuItem item = new MenuItem($"{label} ({drive.Name})", GoToDirFromMenu);
+                item.Tag = drive.Name;
 
-            return key;
+                items[i] = item;
+            }
+            return items;
         }
 
         private void SetUpMenus()
         {
+            itemsCount = new StatusBarPanel();
             statusBar = new StatusBar
             {
                 Dock = DockStyle.Bottom,
                 Panels = { itemsCount },
-                ShowPanels = true, 
+                ShowPanels = true,
                 SizingGrip = true,
+                Visible = StatusBarVisibleOnStart
             };
             Controls.Add(statusBar);
 
-            MenuItem toggleStatusBar = new MenuItem("&Status Bar") {Checked = statusBar.Visible};
-            toggleStatusBar.Click += (sender, args) =>
-            {
-                if (statusBar.Visible) statusBar.Hide();
-                else statusBar.Show();
-                toggleStatusBar.Checked = statusBar.Visible;
+            MenuItem goMenu = new MenuItem("&Go", GetDrivesMenu());
+            MenuItem[] goItems = {
+                new MenuItem("-"),
+                new MenuItem("&Go To...", GoToPrompt),
+                new MenuItem("&Up One Level", UpOneLevel),
             };
-            MenuItem upOneLevel = new MenuItem("&Up One Level", (sender, args) =>
-            {
-                if (CurrentDir.Parent == null) return;
-                ExplorerForm form = new ExplorerForm(CurrentDir.Parent.FullName);
-                form.Show();
-            });
+            goMenu.MenuItems.AddRange(goItems);
 
+            MenuItem viewMenu = new MenuItem("&View", new[]
+            {
+                new MenuItem("&Status Bar", ToggleStatusBar) { Checked = StatusBarVisibleOnStart },
+                new MenuItem("-"),
+            });
+            viewModeItems = new[] {
+                new MenuItem("Large icons", ToggleFolderViewMode(View.LargeIcon))
+                    { RadioCheck = true, Checked = folderView.View == View.LargeIcon },
+                new MenuItem("List", ToggleFolderViewMode(View.List))
+                    { RadioCheck = true, Checked = folderView.View == View.List },
+            };
+            viewMenu.MenuItems.AddRange(viewModeItems);
+
+            //TODO: Main menu
             Menu = new MainMenu(new[]
             {
-                new MenuItem("&File"),
-                new MenuItem("&Edit"),
-                new MenuItem("&View", new []
+                new MenuItem("&File", new[]
                 {
-                    toggleStatusBar,
+                    new MenuItem("Not yet implemented"),
                     new MenuItem("-"),
-                    upOneLevel
+                    new MenuItem("&Close", (sender, e) => Close()),
                 }),
-                new MenuItem("&Help"),
+                new MenuItem("&Edit", new[]
+                {
+                    new MenuItem("Not yet implemented"),
+                }),
+                viewMenu,
+                goMenu,
             });
+        }
+
+        private void NewWindow(string path)
+        {
+            ExplorerForm form = new ExplorerForm(path);
+            form.Show();
+        }
+
+        private void UpOneLevel(object sender, System.EventArgs e)
+        {
+            if (Manager.CurrentDir.Parent == null) return;
+            NewWindow(Manager.CurrentDir.Parent.FullName);
+        }
+
+        private void GoToDirFromMenu(object sender, System.EventArgs e)
+        {
+            MenuItem item = (MenuItem)sender;
+            string path = (string)item.Tag;
+            NewWindow(path);
+        }
+
+        private void GoToPrompt(object sender, System.EventArgs e)
+        {
+            GotoForm goTo = new GotoForm();
+            goTo.ShowDialog();
+
+            if (goTo.DialogResult != DialogResult.OK) return;
+            if (string.IsNullOrEmpty(goTo.Result))
+            {
+                MessageBox.Show("Invalid path.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            NewWindow(goTo.Result);
+        }
+
+        private void ToggleStatusBar(object sender, System.EventArgs e)
+        {
+            if (statusBar.Visible) statusBar.Hide();
+            else statusBar.Show();
+            ((MenuItem)sender).Checked = statusBar.Visible;
+        }
+
+        private System.EventHandler ToggleFolderViewMode(View view)
+        {
+            return (sender, e) =>
+            {
+                folderView.View = view;
+                foreach (MenuItem item in viewModeItems)
+                {
+                    item.Checked = false;
+                }
+                ((MenuItem)sender).Checked = true;
+            };
         }
 
         private void folderView_ItemActivate(object sender, System.EventArgs e)
@@ -141,8 +192,7 @@ namespace ex_plorer
             }
             else if (info is DirectoryInfo dir)
             {
-                ExplorerForm form = new ExplorerForm(dir.FullName);
-                form.Show();
+                NewWindow(dir.FullName);
             }
         }
 
@@ -152,11 +202,10 @@ namespace ex_plorer
                 Application.Exit();
         }
 
-        private async void ExplorerForm_Load(object sender, System.EventArgs e)
+        private void ExplorerForm_Load(object sender, System.EventArgs e)
         {
             itemsCount.Text = "Please wait...";
-            await Task.Run(GetAllFiles);
-            itemsCount.Text = $"{folderView.Items.Count} object(s)";
+            GetAllFiles();
         }
     }
 }

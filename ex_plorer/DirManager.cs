@@ -16,7 +16,7 @@ namespace ex_plorer
 
         private string Path { get; }
         internal DirectoryInfo CurrentDir { get; }
-        internal ImageList LargeIcons { get; } 
+        internal ImageList LargeIcons { get; }
         internal ImageList SmallIcons { get; }
 
         internal DirManager(string path)
@@ -45,6 +45,7 @@ namespace ex_plorer
             };
         }
 
+        //TODO: This is really slow. Use Win32 function calls instead of DirectoryInfo
         internal IEnumerable<ListViewItem> GetAllFiles()
         {
             IEnumerable<ListViewItem> items = CurrentDir.EnumerateFileSystemInfos().Select(info =>
@@ -55,10 +56,17 @@ namespace ex_plorer
 
                 if (info is FileInfo file)
                 {
+                    item.SubItems.AddRange(new[]
+                    {
+                        file.Length.FileSizeInKB(),
+                        $"{file.Extension} File",
+                        info.LastWriteTime.ToString()
+                    });
                     item.ImageKey = SetIcon(file);
                 }
                 else if (info is DirectoryInfo dir)
                 {
+                    item.SubItems.AddRange(new[] { "", "Directory", info.LastWriteTime.ToString() });
                     isDirectory = true;
                     item.ImageKey = DirIcon;
                 }

@@ -46,6 +46,8 @@ namespace ex_plorer
             for (int i = 0; i < DirManager.Drives.Length; i++)
             {
                 DriveInfo drive = DirManager.Drives[i];
+                if (!drive.IsReady) continue;
+
                 string label = drive.VolumeLabel;
                 if (string.IsNullOrEmpty(label))
                 {
@@ -104,6 +106,8 @@ namespace ex_plorer
                     { RadioCheck = true, Checked = folderView.View == View.LargeIcon },
                 new MenuItem("List", ToggleFolderViewMode(View.List))
                     { RadioCheck = true, Checked = folderView.View == View.List },
+                new MenuItem("Details", ToggleFolderViewMode(View.Details))
+                    { RadioCheck = true, Checked = folderView.View == View.Details },
             };
             viewMenu.MenuItems.AddRange(viewModeItems);
 

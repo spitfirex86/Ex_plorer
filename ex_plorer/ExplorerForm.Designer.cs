@@ -44,12 +44,15 @@
             this.colModified});
             this.folderView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.folderView.HideSelection = false;
+            this.folderView.LabelEdit = true;
             this.folderView.Location = new System.Drawing.Point(0, 0);
             this.folderView.Name = "folderView";
             this.folderView.Size = new System.Drawing.Size(484, 321);
             this.folderView.TabIndex = 2;
             this.folderView.UseCompatibleStateImageBehavior = false;
+            this.folderView.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.folderView_AfterLabelEdit);
             this.folderView.ItemActivate += new System.EventHandler(this.folderView_ItemActivate);
+            this.folderView.SelectedIndexChanged += new System.EventHandler(this.folderView_SelectedIndexChanged);
             // 
             // colName
             // 
@@ -80,7 +83,6 @@
             this.Name = "ExplorerForm";
             this.Text = "Explorer";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.ExplorerForm_FormClosed);
-            this.Load += new System.EventHandler(this.ExplorerForm_Load);
             this.ResumeLayout(false);
 
         }
